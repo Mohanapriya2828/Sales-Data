@@ -3,7 +3,8 @@
 #include <iomanip>
 #include <string>
 #include <filesystem>   
-#include <limits>        
+#include <limits>    
+#include <random>    
 
 using namespace std;
 
@@ -22,30 +23,12 @@ bool isFileEmpty(const string& filename) {
 }
 
 
-int getNextId(const string& filename) {
-    ifstream file(filename);
-    if (!file) return 1; 
-    string line;
-    getline(file, line); 
+int generateRandomId() {
+    static std::random_device rd;  
+    static std::mt19937 gen(rd());  
+    static std::uniform_int_distribution<> dis(1000, 9999); 
 
-    int maxId = 0;
-    while (getline(file, line)) {
-        if (line.empty()) continue;
-
-        size_t firstComma = line.find(',');
-        size_t secondComma = line.find(',', firstComma + 1);
-        if (firstComma == string::npos || secondComma == string::npos) continue;
-
-        string idStr = line.substr(firstComma + 1, secondComma - firstComma - 1);
-
-        try {
-            int id = stoi(idStr);
-            if (id > maxId) maxId = id;
-        } catch (...) {
-            
-        }
-    }
-    return maxId + 1;
+    return dis(gen);
 }
 
 bool isValidDate(const string& date) {
@@ -95,12 +78,12 @@ void appendSaleToCSV(const string& filename, const Sale& s) {
 
 int main() {
     const string filename = "sales.csv";
-    int nextId = getNextId(filename);
 
     char choice;
     do {
         Sale s;
-        s.id = nextId++;
+        s.id = generateRandomId();
+
 
         // Date validation loop
         do {
