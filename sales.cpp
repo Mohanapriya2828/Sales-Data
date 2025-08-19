@@ -27,16 +27,24 @@ int generateRandomId() {
     return dis(gen);
 }
 
-// Function to validate the date format (DD/MM/YYYY)
 bool isValidDate(const string& date) {
     if (date.size() != 10 || date[2] != '/' || date[5] != '/') return false;
     for (int i = 0; i < 10; i++) {
         if (i == 2 || i == 5) continue;
         if (!isdigit(date[i])) return false;
     }
+
+    // Extract and validate day, month, and year
+    int day = stoi(date.substr(0, 2));
+    int month = stoi(date.substr(3, 2));
+    int year = stoi(date.substr(6, 4));
+
+    if (month < 1 || month > 12) return false;  // Invalid month
+    if (day < 1 || day > 31) return false;      // Invalid day (we'll ignore month-specific day limits)
+    if (year < 2010 || year > 2025) return false; // Year must be between 2010 and 2025
+
     return true;
 }
-
 // Function to append a sale to the CSV file
 void appendSaleToCSV(const string& filename, const Sale& s) {
     ofstream file(filename, ios::app);
@@ -110,7 +118,7 @@ string convert_date_format(const string& date) {
     return date.substr(6, 4) + "-" + date.substr(3, 2) + "-" + date.substr(0, 2); // YYYY-MM-DD
 }
 
-
+// Function to generate the report
 void generate_report(const vector<Sale>& sales) {
     ofstream report("report.txt");
     if (!report) {
@@ -179,6 +187,55 @@ void createSortedTempFile(const string& filename) {
     cout << "Sales records have been sorted and saved to temp.csv.\n";
 }
 
+
+// Function to validate if item name contains only alphabetic characters
+bool isValidItemName(const string& itemName) {
+    return all_of(itemName.begin(), itemName.end(), ::isalpha);
+}
+
+// Inside the main function, where item name is entered:
+
+
+// Function to validate integer input (quantity)
+bool isValidInt(int& value) {
+    string input;
+    cin >> input;
+    stringstream ss(input);
+    return ss >> value && ss.eof();
+}
+
+// Function to validate double input (price)
+bool isValidDouble(double& value) {
+    string input;
+    cin >> input;
+    stringstream ss(input);
+    return ss >> value && ss.eof();
+}
+
+// Function to get 'y' or 'n' input only
+// Function to get 'y' or 'n' input only
+char getYorN(const string& prompt) {
+    string choice;
+    while (true) {
+        cout << prompt;
+        cin >> choice;
+        transform(choice.begin(), choice.end(), choice.begin(), ::tolower);  // Convert input to lowercase for uniformity
+
+        if (choice == "y" || choice == "yes") {
+            return 'y';
+        } else if (choice == "n" || choice == "no") {
+            return 'n';
+        } else {
+            cout << "Invalid answer. Please enter 'y' for yes or 'n' for no.\n";
+            // The loop will continue and ask the same question
+        }
+    }
+}
+
+
+
+
+
 // Function to display all sales records
 void displaySales(const vector<Sale>& sales) {
     cout << "\nSales Records:\n";
@@ -206,6 +263,8 @@ void displaySales(const vector<Sale>& sales) {
     cout << string(100, '-') << "\n";
 }
 
+
+
 int main() {
     const string filename = "sales.csv";
     char choice;
@@ -215,6 +274,7 @@ int main() {
         Sale s;
         s.id = generateRandomId();
 
+        // Validate date
         do {
             cout << "Enter date (DD/MM/YYYY): ";
             cin >> s.date;
@@ -222,24 +282,37 @@ int main() {
         } while (!isValidDate(s.date));
 
         cin.ignore();
-        cout << "Enter item name: ";
-        getline(cin, s.itemName);
-        cout << "Enter item quantity: ";
-        cin >> s.quantity;
-        cout << "Enter unit price: ";
-        cin >> s.price;
+
+        // Validate item name (only alphabetic characters)
+        do {
+            cout << "Enter item name: ";
+            getline(cin, s.itemName);
+            if (!isValidItemName(s.itemName)) {
+                cout << "Invalid item name. Only alphabetic characters are allowed. Try again.\n";
+            }
+        } while (!isValidItemName(s.itemName));
+
+        // Validate quantity (only integers)
+        do {
+            cout << "Enter item quantity: ";
+        } while (!isValidInt(s.quantity));  // Loops until a valid integer is entered
+
+        // Validate price (only doubles)
+        do {
+            cout << "Enter unit price: ";
+        } while (!isValidDouble(s.price));  // Loops until a valid double is entered
 
         appendSaleToCSV(filename, s);
         cout << "Record saved.\n";
 
-        cout << "Add another record? (y/n): ";
-        cin >> choice;
-    } while (choice == 'y' || choice == 'Y');
+        // Ask if the user wants to add another record
+        choice = getYorN("Add another record? (y/n): ");
+
+    } while (choice == 'y');  // Loops if 'y' or 'yes' is entered
 
     // Update sale records
-    cout << "Do you want to update any record? (y/n): ";
-    cin >> choice;
-    if (choice == 'y' || choice == 'Y') {
+    choice = getYorN("Do you want to update any record? (y/n): ");
+    if (choice == 'y') {
         vector<Sale> sales = loadSales(filename);
         displaySales(sales); // Display all sales
 
@@ -267,9 +340,8 @@ int main() {
     }
 
     // Delete sale records
-    cout << "Do you want to delete any record? (y/n): ";
-    cin >> choice;
-    if (choice == 'y' || choice == 'Y') {
+    choice = getYorN("Do you want to delete any record? (y/n): ");
+    if (choice == 'y') {
         vector<Sale> sales = loadSales(filename);
         displaySales(sales); // Display all sales
 
@@ -290,7 +362,7 @@ int main() {
     // Sort and copy to temp.csv
     createSortedTempFile(filename);
 
-
+    // Generate report
     vector<Sale> sales = loadSales(filename);  // Load all sales for reporting
     generate_report(sales);
 
