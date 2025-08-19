@@ -1,4 +1,3 @@
-// 
 
 #include <iostream>
 #include <fstream>
@@ -9,6 +8,7 @@
 #include <random>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -80,7 +80,7 @@ vector<Sale> loadSales(const string& filename) {
     if (!file) return sales;
 
     string line;
-    getline(file, line); 
+    getline(file, line); // Skip header
 
     while (getline(file, line)) {
         if (line.empty()) continue;
@@ -123,6 +123,16 @@ void saveSales(const string& filename, const vector<Sale>& sales) {
     file.close();
 }
 
+void deleteSaleById(vector<Sale>& sales, int targetId) {
+    auto it = remove_if(sales.begin(), sales.end(), [targetId](const Sale& s) {
+        return s.id == targetId;
+    });
+
+    if (it != sales.end()) {
+        sales.erase(it, sales.end());
+    }
+}
+
 int main() {
     const string filename = "sales.csv";
     char choice;
@@ -156,7 +166,6 @@ int main() {
         cin >> choice;
 
     } while (choice == 'y' || choice == 'Y');
-
 
     cout << "Do you want to update any record? (y/n): ";
     cin >> choice;
@@ -205,6 +214,40 @@ int main() {
         } else {
             cout << "Sale ID not found.\n";
         }
+    }
+
+    cout << "Do you want to delete any record? (y/n): ";
+    cin >> choice;
+    if (choice == 'y' || choice == 'Y') {
+        vector<Sale> sales = loadSales(filename);
+        if (sales.empty()) {
+            cout << "No records found.\n";
+            return 0;
+        }
+
+        int targetId;
+        bool found = false;
+
+        do {
+            cout << "Enter sale ID to delete: ";
+            cin >> targetId;
+
+            for (const auto& s : sales) {
+                if (s.id == targetId) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                deleteSaleById(sales, targetId);
+                saveSales(filename, sales);
+                cout << "Record deleted successfully.\n";
+                break;
+            } else {
+                cout << "Invalid sale ID. Please try again.\n";
+            }
+        } while (!found);
     }
 
     cout << "\nAll operations completed.\n";
