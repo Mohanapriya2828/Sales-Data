@@ -1,33 +1,34 @@
+// 
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <string>
-#include <filesystem>   
-#include <limits>    
-#include <random>    
+#include <filesystem>
+#include <limits>
+#include <random>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
 struct Sale {
-    string date;         
-    int id;              
-    string itemName;     
-    int quantity;        
-    double price;        
+    string date;
+    int id;
+    string itemName;
+    int quantity;
+    double price;
 };
-
 
 bool isFileEmpty(const string& filename) {
     ifstream file(filename);
     return file.peek() == ifstream::traits_type::eof();
 }
 
-
 int generateRandomId() {
-    static std::random_device rd;  
-    static std::mt19937 gen(rd());  
-    static std::uniform_int_distribution<> dis(1000, 9999); 
-
+    static random_device rd;
+    static mt19937 gen(rd());
+    static uniform_int_distribution<> dis(1000, 9999);
     return dis(gen);
 }
 
@@ -44,10 +45,9 @@ bool isValidDate(const string& date) {
     int month = stoi(date.substr(3, 2));
     int year = stoi(date.substr(6, 4));
 
-    if (year < 1000 || year > 9999) return false; 
+    if (year < 1000 || year > 9999) return false;
     if (month < 1 || month > 12) return false;
     if (day < 1 || day > 31) return false;
-
 
     return true;
 }
@@ -57,16 +57,14 @@ void appendSaleToCSV(const string& filename, const Sale& s) {
 
     ofstream file(filename, ios::app);
     if (!file) {
-        cerr << " Error: Cannot open " << filename << " for writing.\n";
+        cerr << "Error: Cannot open " << filename << " for writing.\n";
         return;
     }
 
-    
     if (writeHeader) {
         file << "date,saleID,item name,item quantity,price\n";
     }
 
-    
     file << s.date << ","
          << s.id << ","
          << s.itemName << ","
@@ -76,16 +74,63 @@ void appendSaleToCSV(const string& filename, const Sale& s) {
     file.close();
 }
 
+vector<Sale> loadSales(const string& filename) {
+    vector<Sale> sales;
+    ifstream file(filename);
+    if (!file) return sales;
+
+    string line;
+    getline(file, line); 
+
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        stringstream ss(line);
+        Sale s;
+        string temp;
+
+        getline(ss, s.date, ',');
+        getline(ss, temp, ',');
+        s.id = stoi(temp);
+        getline(ss, s.itemName, ',');
+        getline(ss, temp, ',');
+        s.quantity = stoi(temp);
+        getline(ss, temp, ',');
+        s.price = stod(temp);
+
+        sales.push_back(s);
+    }
+
+    return sales;
+}
+
+void saveSales(const string& filename, const vector<Sale>& sales) {
+    ofstream file(filename);
+    if (!file) {
+        cerr << "Error: Cannot open " << filename << " for writing.\n";
+        return;
+    }
+
+    file << "date,saleID,item name,item quantity,price\n";
+
+    for (const auto& s : sales) {
+        file << s.date << ","
+             << s.id << ","
+             << s.itemName << ","
+             << s.quantity << ","
+             << fixed << setprecision(2) << s.price << "\n";
+    }
+
+    file.close();
+}
+
 int main() {
     const string filename = "sales.csv";
-
     char choice;
     do {
         Sale s;
         s.id = generateRandomId();
 
-
-        // Date validation loop
+        // Validate date
         do {
             cout << "Enter date (DD/MM/YYYY): ";
             cin >> s.date;
@@ -93,7 +138,7 @@ int main() {
                 cout << "Invalid date, try again.\n";
         } while (!isValidDate(s.date));
 
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear buffer
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         cout << "Enter item name: ";
         getline(cin, s.itemName);
@@ -106,12 +151,62 @@ int main() {
 
         appendSaleToCSV(filename, s);
 
-        cout << " Record saved to sales.csv.\n";
-        cout << " Add another record? (y/n): ";
+        cout << "Record saved to sales.csv.\n";
+        cout << "Add another record? (y/n): ";
         cin >> choice;
 
     } while (choice == 'y' || choice == 'Y');
 
-    cout << "\n All records saved successfully.\n";
+
+    cout << "Do you want to update any record? (y/n): ";
+    cin >> choice;
+    if (choice == 'y' || choice == 'Y') {
+        vector<Sale> sales = loadSales(filename);
+        if (sales.empty()) {
+            cout << "No records found.\n";
+            return 0;
+        }
+
+        int targetId;
+        cout << "Enter sale ID to update: ";
+        cin >> targetId;
+        bool found = false;
+
+        for (auto& s : sales) {
+            if (s.id == targetId) {
+                found = true;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+                do {
+                    cout << "Enter new date (DD/MM/YYYY): ";
+                    cin >> s.date;
+                    if (!isValidDate(s.date))
+                        cout << "Invalid date, try again.\n";
+                } while (!isValidDate(s.date));
+
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+                cout << "Enter new item name: ";
+                getline(cin, s.itemName);
+
+                cout << "Enter new quantity: ";
+                cin >> s.quantity;
+
+                cout << "Enter new unit price: ";
+                cin >> s.price;
+
+                break;
+            }
+        }
+
+        if (found) {
+            saveSales(filename, sales);
+            cout << "Record updated successfully.\n";
+        } else {
+            cout << "Sale ID not found.\n";
+        }
+    }
+
+    cout << "\nAll operations completed.\n";
     return 0;
 }
