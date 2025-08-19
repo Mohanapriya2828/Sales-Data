@@ -133,6 +133,28 @@ void deleteSaleById(vector<Sale>& sales, int targetId) {
     }
 }
 
+bool compareDates(const Sale& a, const Sale& b) {
+    // Date format is DD/MM/YYYY. We will compare the string lexicographically.
+    return a.date < b.date;
+}
+
+void createSortedTempFile(const string& filename) {
+    vector<Sale> sales = loadSales(filename);
+    if (sales.empty()) {
+        cout << "No records found to sort.\n";
+        return;
+    }
+
+    // Sort sales by date
+    sort(sales.begin(), sales.end(), compareDates);
+
+    // Save sorted sales to temp.csv
+    const string tempFilename = "temp.csv";
+    saveSales(tempFilename, sales);
+
+    cout << "Sales records have been sorted and saved to temp.csv.\n";
+}
+
 int main() {
     const string filename = "sales.csv";
     char choice;
@@ -249,6 +271,9 @@ int main() {
             }
         } while (!found);
     }
+
+    // Automatically sort and save to temp.csv
+    createSortedTempFile(filename);
 
     cout << "\nAll operations completed.\n";
     return 0;
