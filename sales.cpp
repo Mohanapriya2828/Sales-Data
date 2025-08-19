@@ -311,17 +311,50 @@ int main() {
     } while (choice == 'y');  // Loops if 'y' or 'yes' is entered
 
     // Update sale records
-    choice = getYorN("Do you want to update any record? (y/n): ");
-    if (choice == 'y') {
-        vector<Sale> sales = loadSales(filename);
-        displaySales(sales); // Display all sales
+    // choice = getYorN("Do you want to update any record? (y/n): ");
+    // if (choice == 'y') {
+    //     vector<Sale> sales = loadSales(filename);
+    //     displaySales(sales); // Display all sales
 
-        int targetId;
+    //     int targetId;
+    //     cout << "Enter sale ID to update: ";
+    //     cin >> targetId;
+
+    //     auto it = find_if(sales.begin(), sales.end(), [targetId](const Sale& s) { return s.id == targetId; });
+    //     if (it != sales.end()) {
+    //         Sale& s = *it;
+    //         cout << "Enter new date (DD/MM/YYYY): ";
+    //         cin >> s.date;
+    //         cin.ignore();
+    //         cout << "Enter new item name: ";
+    //         getline(cin, s.itemName);
+    //         cout << "Enter new quantity: ";
+    //         cin >> s.quantity;
+    //         cout << "Enter new unit price: ";
+    //         cin >> s.price;
+    //         saveSales(filename, sales);
+    //         cout << "Record updated.\n";
+    //     } else {
+    //         cout << "Sale ID not found.\n";
+    //     }
+    // }
+
+    // Update sale records
+choice = getYorN("Do you want to update any record? (y/n): ");
+if (choice == 'y') {
+    vector<Sale> sales = loadSales(filename);
+    displaySales(sales); // Display all sales
+
+    int targetId;
+    bool found = false; // Flag to track if the Sale ID was found
+
+    do {
         cout << "Enter sale ID to update: ";
         cin >> targetId;
 
         auto it = find_if(sales.begin(), sales.end(), [targetId](const Sale& s) { return s.id == targetId; });
         if (it != sales.end()) {
+            found = true;
             Sale& s = *it;
             cout << "Enter new date (DD/MM/YYYY): ";
             cin >> s.date;
@@ -335,17 +368,41 @@ int main() {
             saveSales(filename, sales);
             cout << "Record updated.\n";
         } else {
-            cout << "Sale ID not found.\n";
+            cout << "Sale ID not found. Please try again.\n";
         }
-    }
+    } while (!found);  // Loop until a valid Sale ID is found and updated
+}
 
     // Delete sale records
-    choice = getYorN("Do you want to delete any record? (y/n): ");
-    if (choice == 'y') {
-        vector<Sale> sales = loadSales(filename);
-        displaySales(sales); // Display all sales
+    // choice = getYorN("Do you want to delete any record? (y/n): ");
+    // if (choice == 'y') {
+    //     vector<Sale> sales = loadSales(filename);
+    //     displaySales(sales); // Display all sales
 
-        int targetId;
+    //     int targetId;
+    //     cout << "Enter sale ID to delete: ";
+    //     cin >> targetId;
+
+    //     auto it = remove_if(sales.begin(), sales.end(), [targetId](const Sale& s) { return s.id == targetId; });
+    //     if (it != sales.end()) {
+    //         sales.erase(it, sales.end());
+    //         saveSales(filename, sales);
+    //         cout << "Record deleted.\n";
+    //     } else {
+    //         cout << "Sale ID not found.\n";
+    //     }
+    // }
+
+    // Delete sale records
+choice = getYorN("Do you want to delete any record? (y/n): ");
+if (choice == 'y') {
+    vector<Sale> sales = loadSales(filename);
+    displaySales(sales); // Display all sales
+
+    int targetId;
+    bool found = false; // Flag to track if the Sale ID was found
+
+    do {
         cout << "Enter sale ID to delete: ";
         cin >> targetId;
 
@@ -354,10 +411,13 @@ int main() {
             sales.erase(it, sales.end());
             saveSales(filename, sales);
             cout << "Record deleted.\n";
+            found = true;
         } else {
-            cout << "Sale ID not found.\n";
+            cout << "Sale ID not found. Please try again.\n";
         }
-    }
+    } while (!found);  // Loop until a valid Sale ID is found and deleted
+}
+
 
     // Sort and copy to temp.csv
     createSortedTempFile(filename);
